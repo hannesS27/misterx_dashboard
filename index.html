@@ -1,1 +1,634 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>MISTER X // DASHBOARD</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
+:root{
+  --g:#00ff41;--gd:#00aa2a;--gdk:#002208;--bg:#000;--bg2:#050f05;--bg3:#0a180a;
+  --w:#e8ffe8;--gray:#446644;--red:#ff3333;--ora:#ff9900;--blue:#00c8ff;
+  --ta:#ff5577;--tb:#55aaff;--tc:#66dd66;
+  --glow:0 0 8px #00ff41,0 0 22px #00ff4155;
+  --glows:0 0 12px #00ff41,0 0 40px #00ff41,0 0 80px #00ff4133;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow:hidden;}
+body{background:var(--bg);color:var(--g);font-family:'Share Tech Mono',monospace;}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,255,65,.012) 3px,rgba(0,255,65,.012) 4px);pointer-events:none;z-index:9999;}
+
+#matrixCanvas{position:fixed;inset:0;z-index:1;pointer-events:none;}
+.matrix-fade #matrixCanvas{animation:mtxOut 1.2s forwards;}
+@keyframes mtxOut{to{opacity:0;transform:scale(1.5);filter:blur(8px);}}
+
+#flashOverlay{position:fixed;inset:0;z-index:8500;background:var(--g);opacity:0;pointer-events:none;}
+.flash-go #flashOverlay{animation:flashAni .9s ease-out;}
+@keyframes flashAni{0%{opacity:0}15%{opacity:.95}35%{opacity:.5}100%{opacity:0}}
+
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 24px;border-bottom:1px solid var(--gdk);background:rgba(5,15,5,.85);backdrop-filter:blur(6px);position:fixed;top:0;left:0;right:0;z-index:100;height:52px;}
+.topbar.intro-hidden{opacity:0;pointer-events:none;}
+.logo{font-family:'Orbitron',monospace;font-weight:900;font-size:1.05rem;letter-spacing:4px;text-shadow:var(--glow);}
+.logo span{color:var(--w);}
+.slide-dots{display:flex;gap:5px;align-items:center;}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--gray);transition:all .3s;cursor:pointer;}
+.dot.active{background:var(--g);box-shadow:var(--glow);width:18px;border-radius:3px;}
+.slide-indicator{font-size:.7rem;letter-spacing:2px;color:var(--gray);}
+
+.slides-wrap{position:fixed;top:52px;bottom:52px;left:0;right:0;overflow:hidden;z-index:2;}
+.slides-wrap.intro-full{top:0;bottom:0;}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 32px;opacity:0;pointer-events:none;transition:opacity .5s ease,transform .5s ease;transform:translateX(60px);overflow-y:auto;}
+.slide.active{opacity:1;pointer-events:all;transform:translateX(0);}
+.slide.exit-left{opacity:0;transform:translateX(-60px);}
+.slide.intro-exit{animation:introOut 1s forwards;}
+@keyframes introOut{to{opacity:0;transform:scale(1.3);filter:blur(10px);}}
+
+.bottomnav{position:fixed;bottom:0;left:0;right:0;height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;border-top:1px solid var(--gdk);background:var(--bg2);z-index:100;}
+.bottomnav.intro-hidden{opacity:0;pointer-events:none;}
+.nav-btn{padding:8px 28px;border:1px solid var(--gd);background:transparent;color:var(--g);font-family:'Share Tech Mono',monospace;font-size:.8rem;cursor:pointer;letter-spacing:2px;transition:all .2s;}
+.nav-btn:hover{background:var(--gdk);box-shadow:var(--glow);}
+.nav-btn:disabled{opacity:.2;cursor:not-allowed;}
+.nav-btn.primary{border:2px solid var(--g);background:var(--gdk);font-family:'Orbitron',monospace;font-size:.75rem;font-weight:700;text-shadow:var(--glow);}
+.nav-btn.primary:hover{background:var(--g);color:var(--bg);box-shadow:var(--glows);}
+.slide-counter{font-family:'Orbitron',monospace;font-size:.75rem;color:var(--gray);letter-spacing:2px;}
+
+.intro-wrap{text-align:center;position:relative;z-index:5;}
+.intro-mini{font-size:.7rem;letter-spacing:6px;color:var(--gd);margin-bottom:24px;opacity:0;animation:fIn 1s .5s forwards;}
+.intro-huge{font-family:'Orbitron',monospace;font-weight:900;font-size:clamp(3.5rem,13vw,9rem);letter-spacing:10px;line-height:1;text-shadow:var(--glows);opacity:0;animation:fIn 1s 1s forwards;}
+.intro-sub{font-size:clamp(.85rem,2vw,1.1rem);letter-spacing:8px;color:var(--w);margin-top:22px;opacity:0;animation:fIn 1s 1.8s forwards;}
+.intro-start-btn{margin-top:48px;padding:16px 44px;border:2px solid var(--g);background:rgba(0,255,65,.06);color:var(--g);font-family:'Orbitron',monospace;font-size:1rem;font-weight:700;letter-spacing:5px;cursor:pointer;transition:all .3s;text-shadow:var(--glow);opacity:0;animation:fIn 1s 2.6s forwards,breathe 2s 3.6s infinite;}
+.intro-start-btn:hover{background:var(--g);color:var(--bg);box-shadow:var(--glows);transform:scale(1.05);}
+@keyframes breathe{0%,100%{box-shadow:0 0 10px rgba(0,255,65,.3)}50%{box-shadow:0 0 32px rgba(0,255,65,1)}}
+@keyframes fIn{to{opacity:1;}}
+
+.glitch{position:relative;display:inline-block;}
+.glitch::before,.glitch::after{content:attr(data-text);position:absolute;top:0;left:0;font-family:inherit;font-weight:inherit;font-size:inherit;letter-spacing:inherit;}
+.glitch::before{animation:g1 3s infinite linear;clip-path:polygon(0 0,100% 0,100% 35%,0 35%);color:#ff004f;left:4px;}
+.glitch::after{animation:g2 3s infinite linear;clip-path:polygon(0 65%,100% 65%,100% 100%,0 100%);color:#00ffff;left:-4px;}
+@keyframes g1{0%,93%,100%{transform:translateX(0)}95%{transform:translateX(-6px)}97%{transform:translateX(6px)}}
+@keyframes g2{0%,93%,100%{transform:translateX(0)}95%{transform:translateX(6px)}97%{transform:translateX(-6px)}}
+
+.slide-header{font-family:'Orbitron',monospace;font-size:.7rem;letter-spacing:5px;color:var(--gd);margin-bottom:10px;text-align:center;}
+.slide-header::before{content:'// ';}
+.slide-title{font-family:'Orbitron',monospace;font-weight:900;font-size:clamp(1.4rem,3.5vw,2.3rem);letter-spacing:5px;text-shadow:var(--glow);text-align:center;margin-bottom:24px;}
+.slide-title-icon{font-size:clamp(2rem,5vw,3rem);display:block;margin-bottom:10px;}
+
+.blist{list-style:none;width:100%;max-width:720px;background:var(--bg2);border:1px solid var(--gdk);border-left:4px solid var(--g);padding:24px 28px;}
+.blist li{display:flex;align-items:flex-start;gap:14px;padding:10px 0;font-size:clamp(.95rem,2.3vw,1.15rem);color:var(--w);line-height:1.5;border-bottom:1px dashed rgba(0,170,42,.2);}
+.blist li:last-child{border-bottom:none;}
+.blist li::before{content:'▶';color:var(--g);font-size:.85rem;margin-top:5px;flex-shrink:0;text-shadow:var(--glow);}
+.blist li em{color:var(--g);font-style:normal;font-weight:700;}
+.blist li strong{color:var(--w);}
+
+.sub-note{margin-top:14px;width:100%;max-width:720px;padding:12px 18px;font-size:.82rem;background:rgba(255,51,51,.06);border:1px solid rgba(255,51,51,.35);border-left:3px solid var(--red);color:#ffbbbb;line-height:1.5;}
+.sub-note.ok{background:rgba(0,255,65,.04);border-color:rgba(0,170,42,.3);border-left-color:var(--g);color:#b8f5c4;}
+
+.concept-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;width:100%;max-width:900px;}
+.concept-card{background:var(--bg2);border:1px solid var(--gdk);padding:22px 16px;text-align:center;}
+.concept-card.red-top{border-top:3px solid var(--red);}
+.concept-card.blue-top{border-top:3px solid var(--blue);}
+.concept-card.g-top{border-top:3px solid var(--g);}
+.concept-icon{font-size:2.8rem;margin-bottom:10px;}
+.concept-count{font-family:'Orbitron',monospace;font-size:2.5rem;font-weight:900;margin-bottom:4px;}
+.concept-count.red{color:var(--red);text-shadow:0 0 10px var(--red);}
+.concept-count.blue{color:var(--blue);text-shadow:0 0 10px var(--blue);}
+.concept-count.g{color:var(--g);text-shadow:var(--glow);}
+.concept-label{font-family:'Orbitron',monospace;font-size:.65rem;letter-spacing:3px;margin-bottom:8px;}
+.concept-label.red{color:var(--red);}
+.concept-label.blue{color:var(--blue);}
+.concept-label.g{color:var(--g);}
+.concept-role{font-size:.8rem;color:var(--w);line-height:1.5;}
+
+.rot-wrap{width:100%;max-width:780px;}
+.rot-row{display:flex;align-items:center;justify-content:center;gap:14px;margin:10px 0;flex-wrap:wrap;}
+.rot-box{padding:12px 16px;border:1px solid var(--gdk);background:var(--bg2);min-width:130px;text-align:center;}
+.rot-box.red{border-color:var(--red);background:rgba(255,51,51,.08);}
+.rot-box.blue{border-color:var(--blue);background:rgba(0,200,255,.06);}
+.rot-box-label{font-family:'Orbitron',monospace;font-size:.55rem;letter-spacing:2px;color:var(--gray);margin-bottom:4px;}
+.rot-box-name{font-family:'Orbitron',monospace;font-size:.85rem;letter-spacing:2px;color:var(--w);margin-bottom:4px;}
+.rot-box-role{font-family:'Orbitron',monospace;font-size:.65rem;letter-spacing:2px;}
+.rot-box.red .rot-box-role{color:var(--red);}
+.rot-box.blue .rot-box-role{color:var(--blue);}
+.rot-arrow-v{font-size:1.6rem;color:var(--ora);text-align:center;text-shadow:0 0 10px var(--ora);margin:2px 0;}
+
+.loc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;width:100%;max-width:920px;}
+.loc-card{background:var(--bg2);border:1px solid var(--gdk);padding:14px;display:flex;flex-direction:column;gap:6px;}
+.loc-num{font-family:'Orbitron',monospace;font-size:.55rem;letter-spacing:2px;color:var(--gray);}
+.loc-icon-name{display:flex;align-items:center;gap:8px;}
+.loc-icon{font-size:1.5rem;}
+.loc-name{font-family:'Orbitron',monospace;font-size:.75rem;font-weight:700;color:var(--g);letter-spacing:1px;}
+.loc-desc{font-size:.78rem;color:var(--w);}
+.loc-code{font-family:'Orbitron',monospace;font-size:1.2rem;font-weight:900;letter-spacing:5px;color:var(--ora);padding:5px 8px;border:1px solid rgba(255,153,0,.4);background:rgba(255,153,0,.06);cursor:pointer;align-self:flex-end;margin-top:4px;filter:blur(7px);transition:filter .3s;user-select:none;}
+.loc-code:hover{filter:blur(0);}
+
+.joker-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;width:100%;max-width:900px;}
+.joker-col-header{font-family:'Orbitron',monospace;font-size:.7rem;letter-spacing:3px;padding:8px 12px;text-align:center;margin-bottom:8px;}
+.joker-col-header.red{color:var(--red);border:1px solid var(--red);background:rgba(255,51,51,.06);}
+.joker-col-header.blue{color:var(--blue);border:1px solid var(--blue);background:rgba(0,200,255,.06);}
+.joker-item{background:var(--bg2);border:1px solid var(--gdk);padding:12px;margin-bottom:6px;}
+.joker-item-title{font-family:'Orbitron',monospace;font-size:.7rem;letter-spacing:2px;margin-bottom:3px;}
+.joker-item-title.red{color:var(--red);}
+.joker-item-title.blue{color:var(--blue);}
+.joker-item-desc{font-size:.75rem;color:var(--w);line-height:1.4;}
+
+.rand-wrap{width:100%;max-width:760px;text-align:center;}
+.team-row{display:flex;flex-direction:column;gap:10px;margin:14px 0;}
+.team-card{display:flex;align-items:center;gap:16px;padding:14px 20px;background:var(--bg2);border:1px solid var(--gdk);color:var(--w);transition:all .4s;}
+.team-emoji{font-size:1.6rem;min-width:36px;}
+.team-name{font-family:'Orbitron',monospace;font-size:.9rem;letter-spacing:2px;flex:1;text-align:left;}
+.team-role-badge{font-family:'Orbitron',monospace;font-size:.7rem;letter-spacing:3px;padding:5px 14px;border:1px solid var(--gray);color:var(--gray);transition:all .4s;}
+.team-card.is-faenger{border:2px solid var(--red);background:rgba(255,51,51,.07);animation:pulsered 1.5s infinite;}
+.team-card.is-faenger .team-role-badge{border-color:var(--red);color:var(--red);background:rgba(255,51,51,.1);}
+.team-card.is-gejagt{border:2px solid var(--blue);background:rgba(0,200,255,.05);}
+.team-card.is-gejagt .team-role-badge{border-color:var(--blue);color:var(--blue);}
+@keyframes pulsered{0%,100%{box-shadow:0 0 8px rgba(255,51,51,.3)}50%{box-shadow:0 0 28px rgba(255,51,51,.7)}}
+.rand-btn{padding:14px 36px;border:2px solid var(--g);background:var(--gdk);color:var(--g);font-family:'Orbitron',monospace;font-size:.85rem;font-weight:700;letter-spacing:4px;cursor:pointer;transition:all .2s;text-shadow:var(--glow);}
+.rand-btn:hover{background:var(--g);color:var(--bg);box-shadow:var(--glows);}
+
+.rot-action{margin-top:16px;padding:14px;background:var(--bg2);border:1px solid rgba(255,153,0,.4);}
+.rot-action-label{font-size:.65rem;letter-spacing:2px;color:var(--ora);margin-bottom:8px;}
+.rot-action-row{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;}
+.rot-action-btn{padding:8px 12px;border:1px solid rgba(255,153,0,.4);background:transparent;color:var(--ora);font-family:'Share Tech Mono',monospace;font-size:.72rem;cursor:pointer;transition:all .2s;}
+.rot-action-btn:hover{background:rgba(255,153,0,.1);}
+
+.timer-wrap{text-align:center;width:100%;max-width:600px;}
+.timer-huge{font-family:'Orbitron',monospace;font-size:clamp(4rem,15vw,8rem);font-weight:900;color:var(--g);text-shadow:var(--glows);letter-spacing:8px;line-height:1;margin:14px 0;}
+.timer-huge.warn{color:var(--ora);text-shadow:0 0 12px var(--ora),0 0 40px var(--ora);}
+.timer-huge.done{color:var(--red);text-shadow:0 0 12px var(--red),0 0 40px var(--red);animation:blinkhard .4s infinite;}
+@keyframes blinkhard{0%,100%{opacity:1}50%{opacity:.2}}
+.timer-prog{height:6px;background:var(--bg3);border:1px solid var(--gdk);margin:12px 0;overflow:hidden;}
+.timer-prog-bar{height:100%;background:var(--g);box-shadow:var(--glow);transition:width 1s linear;}
+.timer-status{font-size:.75rem;letter-spacing:3px;color:var(--gray);margin-top:8px;}
+.timer-round{font-family:'Orbitron',monospace;font-size:.8rem;letter-spacing:3px;color:var(--gd);margin-bottom:12px;}
+.timer-controls{display:flex;gap:10px;justify-content:center;margin-top:14px;}
+.t-btn{padding:10px 24px;border:1px solid var(--gd);background:transparent;color:var(--g);font-family:'Share Tech Mono',monospace;font-size:.85rem;cursor:pointer;letter-spacing:2px;transition:all .2s;}
+.t-btn:hover{background:var(--gdk);}
+.t-btn.big{border:2px solid var(--g);background:var(--gdk);font-family:'Orbitron',monospace;font-weight:700;}
+.t-btn.big:hover{background:var(--g);color:var(--bg);}
+.t-btn.danger{border-color:rgba(255,51,51,.5);color:var(--red);}
+.t-btn.danger:hover{background:rgba(255,51,51,.1);}
+.standort-alert{margin-top:20px;padding:16px 20px;border:2px solid var(--ora);background:rgba(255,153,0,.08);font-family:'Orbitron',monospace;font-size:.85rem;letter-spacing:2px;color:var(--ora);display:none;animation:pulseorange 1s ease;}
+.standort-alert.show{display:block;}
+@keyframes pulseorange{0%{box-shadow:0 0 0 0 rgba(255,153,0,.5)}70%{box-shadow:0 0 0 20px rgba(255,153,0,0)}100%{box-shadow:0 0 0 0 rgba(255,153,0,0)}}
+
+.statusbar{position:fixed;top:52px;left:0;right:0;display:flex;justify-content:space-between;padding:3px 24px;font-size:.6rem;color:var(--gray);letter-spacing:1px;border-bottom:1px solid var(--gdk);background:var(--bg);z-index:90;}
+.statusbar.intro-hidden{opacity:0;pointer-events:none;}
+</style>
+</head>
+<body>
+
+<canvas id="matrixCanvas"></canvas>
+<div id="flashOverlay"></div>
+
+<div class="topbar intro-hidden" id="topbar">
+  <div class="logo"><span class="glitch" data-text="MISTER X">MISTER X</span></div>
+  <div class="slide-dots" id="slideDots"></div>
+  <div class="slide-indicator"><span id="slideNum">01</span> / <span id="slideTotal">14</span></div>
+</div>
+
+<div class="statusbar intro-hidden" id="statusbar">
+  <span>DASHBOARD // SPIELLEITER-ANSICHT</span>
+  <span id="clock">--:--:--</span>
+</div>
+
+<div class="slides-wrap intro-full" id="slidesWrap">
+
+  <!-- 01: INTRO -->
+  <div class="slide active" id="slide-0">
+    <div class="intro-wrap">
+      <div class="intro-mini">DAS LAUFSPIEL FÜR DRAUSSEN</div>
+      <div class="intro-huge glitch" data-text="MISTER X">MISTER X</div>
+      <div class="intro-sub">DIE JAGD BEGINNT</div>
+      <button class="intro-start-btn" onclick="startGame()">▶ &nbsp; LOS GEHT'S</button>
+    </div>
+  </div>
+
+  <!-- 02: DAS SPIEL -->
+  <div class="slide" id="slide-1">
+    <div class="slide-header">DAS SPIEL AUF EINEN BLICK</div>
+    <div class="slide-title">3 TEAMS. 1 MISSION.</div>
+    <div class="concept-grid">
+      <div class="concept-card red-top">
+        <div class="concept-icon">🎯</div>
+        <div class="concept-count red">1</div>
+        <div class="concept-label red">FÄNGER-TEAM</div>
+        <div class="concept-role">Jagt die anderen Teams</div>
+      </div>
+      <div class="concept-card blue-top">
+        <div class="concept-icon">🏃</div>
+        <div class="concept-count blue">2</div>
+        <div class="concept-label blue">GEJAGTE TEAMS</div>
+        <div class="concept-role">Sammeln Codes und fliehen</div>
+      </div>
+      <div class="concept-card g-top">
+        <div class="concept-icon">📍</div>
+        <div class="concept-count g">6</div>
+        <div class="concept-label g">STATIONEN</div>
+        <div class="concept-role">Versteckte 4-stellige Codes</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 03: ZIEL -->
+  <div class="slide" id="slide-2">
+    <div class="slide-header">ZIEL DES SPIELS</div>
+    <div class="slide-title">🏆 SO GEWINNT MAN</div>
+    <ul class="blist">
+      <li><strong>Gejagte gewinnen:</strong> <em>alle 6 Codes</em> gefunden — ohne gefangen zu werden</li>
+      <li><strong>Fänger gewinnt:</strong> <em>einen Gejagten berührt</em></li>
+      <li>An jeder Station: <em>Rätsel lösen</em> — sonst zählt der Code nicht</li>
+      <li>Nach jedem Rätsel: <em style="color:var(--ora)">Joker gewinnen</em></li>
+    </ul>
+  </div>
+
+  <!-- 04: REGEL 1 -->
+  <div class="slide" id="slide-3">
+    <div class="slide-header">REGEL 1 / 7</div>
+    <div class="slide-title"><span class="slide-title-icon">👥</span>TEAM BLEIBT TEAM</div>
+    <ul class="blist">
+      <li>Immer <em>zusammen</em> bleiben</li>
+      <li>Start zusammen. Rennen zusammen. Ankommen zusammen.</li>
+      <li>Das <em>langsamste Mitglied</em> bestimmt das Tempo</li>
+      <li>Niemand rennt alleine weg</li>
+    </ul>
+  </div>
+
+  <!-- 05: REGEL 2 -->
+  <div class="slide" id="slide-4">
+    <div class="slide-header">REGEL 2 / 7</div>
+    <div class="slide-title"><span class="slide-title-icon">🚦</span>STRASSE = ACHTUNG</div>
+    <ul class="blist">
+      <li>Die <em>StVO gilt</em> — auch im Spiel!</li>
+      <li><em>Kein Sprint</em> über die Straße</li>
+      <li>Erst <em>gucken</em>, dann gehen</li>
+      <li>Sicher sein ist <em>wichtiger als gewinnen</em></li>
+    </ul>
+    <div class="sub-note">⚠ Wer sprintet: Spielstopp für das ganze Team.</div>
+  </div>
+
+  <!-- 06: REGEL 3 -->
+  <div class="slide" id="slide-5">
+    <div class="slide-header">REGEL 3 / 7</div>
+    <div class="slide-title"><span class="slide-title-icon">⚖️</span>NUR ÖFFENTLICHE ORTE</div>
+    <ul class="blist">
+      <li>Erlaubt: <em>Straßen, Wege, Plätze, Parks</em></li>
+      <li><em>KEINE</em> Privatgrundstücke betreten</li>
+      <li><em>KEINE</em> Zäune überklettern</li>
+      <li><em>KEINE</em> fremden Gärten</li>
+      <li>Bleibt im <em>Spielgebiet</em></li>
+    </ul>
+  </div>
+
+  <!-- 07: REGEL 4 -->
+  <div class="slide" id="slide-6">
+    <div class="slide-header">REGEL 4 / 7</div>
+    <div class="slide-title"><span class="slide-title-icon">🤚</span>DAS FANGEN</div>
+    <ul class="blist">
+      <li>Eine <em>Berührung</em> genügt — Arm, Rücken, Schulter</li>
+      <li>Wird <em>einer</em> aus dem Team berührt → <em>ganzes Team</em> gefangen</li>
+      <li>Beim Fang: <em>ALLE</em> stehen <em>SOFORT STILL</em></li>
+      <li>Anruf beim Spielleiter — Runde vorbei</li>
+    </ul>
+    <div class="sub-note">⚠ Keine Diskussion. Berührung ist Berührung — auch am Ärmel!</div>
+  </div>
+
+  <!-- 08: REGEL 5 - ROTATION -->
+  <div class="slide" id="slide-7">
+    <div class="slide-header">REGEL 5 / 7 — NEUE RUNDE</div>
+    <div class="slide-title"><span class="slide-title-icon">🔄</span>ROLLEN TAUSCHEN</div>
+    <div class="rot-wrap">
+      <div style="text-align:center;margin-bottom:8px;font-size:.9rem;color:var(--w);">Nach einem Fang wird <em style="color:var(--g);font-style:normal;">NICHT</em> neu ausgelost:</div>
+
+      <div style="font-size:.6rem;letter-spacing:2px;color:var(--gray);text-align:center;margin:10px 0;">VORHER:</div>
+      <div class="rot-row">
+        <div class="rot-box red"><div class="rot-box-label">TEAM A</div><div class="rot-box-name">FÄNGER</div><div class="rot-box-role">🎯 JAGT</div></div>
+        <div class="rot-box blue"><div class="rot-box-label">TEAM B</div><div class="rot-box-name">GEJAGT</div><div class="rot-box-role">🏃 FLIEHT</div></div>
+        <div class="rot-box blue"><div class="rot-box-label">TEAM C</div><div class="rot-box-name">GEJAGT</div><div class="rot-box-role">🏃 FLIEHT</div></div>
+      </div>
+
+      <div class="rot-arrow-v">⬇ A FÄNGT B ⬇</div>
+
+      <div style="font-size:.6rem;letter-spacing:2px;color:var(--gray);text-align:center;margin:10px 0;">DANACH:</div>
+      <div class="rot-row">
+        <div class="rot-box blue"><div class="rot-box-label">TEAM A</div><div class="rot-box-name">GEJAGT</div><div class="rot-box-role">🏃 FLIEHT</div></div>
+        <div class="rot-box blue"><div class="rot-box-label">TEAM B</div><div class="rot-box-name">GEJAGT</div><div class="rot-box-role">🏃 FLIEHT</div></div>
+        <div class="rot-box red"><div class="rot-box-label">TEAM C</div><div class="rot-box-name">FÄNGER</div><div class="rot-box-role">🎯 JAGT</div></div>
+      </div>
+
+      <div class="sub-note ok" style="margin-top:12px;">✓ Merke: Fänger + Gefangener = <em style="color:var(--g);font-style:normal;">neue Gejagte</em>. Das 3. Team wird <em style="color:var(--g);font-style:normal;">neuer Fänger</em>.</div>
+    </div>
+  </div>
+
+  <!-- 09: REGEL 6 - KEINE BÜNDNISSE -->
+  <div class="slide" id="slide-8">
+    <div class="slide-header">REGEL 6 / 7</div>
+    <div class="slide-title"><span class="slide-title-icon">🚫</span>KEINE BÜNDNISSE</div>
+    <ul class="blist">
+      <li>Teams dürfen <em>NICHT</em> zusammenarbeiten</li>
+      <li><em>KEINE</em> Codes oder Rätsellösungen weitergeben</li>
+      <li><em>KEINE</em> Standorte verraten</li>
+      <li><em>KEIN</em> gegenseitiges Verstecken</li>
+      <li>Jedes Team spielt <em>für sich alleine</em></li>
+    </ul>
+    <div class="sub-note">⚠ Bündnis = Disqualifikation der Runde!</div>
+  </div>
+
+  <!-- 10: REGEL 7 -->
+  <div class="slide" id="slide-9">
+    <div class="slide-header">REGEL 7 / 7</div>
+    <div class="slide-title"><span class="slide-title-icon">📡</span>STANDORT ALLE 4 MIN</div>
+    <ul class="blist">
+      <li>Alle <em>4 Minuten</em>: Standort-Alarm</li>
+      <li>Gejagte melden <em>ehrlich</em> ihren Standort</li>
+      <li>Der Fänger bekommt alle Standorte</li>
+      <li>Ausnahme: aktiver <em>Joker</em> (Ghost / Ablenkung)</li>
+    </ul>
+    <div class="sub-note">⚠ Falscher Standort ohne Joker = Disqualifikation</div>
+  </div>
+
+  <!-- 11: JOKER -->
+  <div class="slide" id="slide-10">
+    <div class="slide-header">DAS JOKER-SYSTEM</div>
+    <div class="slide-title">🃏 JOKER VERDIENEN</div>
+    <div style="text-align:center;margin-bottom:14px;font-size:.88rem;color:var(--w);">Rätsel gelöst? → <em style="color:var(--ora);font-style:normal;">Zufälliger Joker im Vorrat!</em></div>
+    <div class="joker-grid">
+      <div>
+        <div class="joker-col-header red">🎯 FÄNGER-JOKER</div>
+        <div class="joker-item"><div class="joker-item-title red">⚡ SPEED HUNT</div><div class="joker-item-desc">5 Min. jede Minute den Standort</div></div>
+        <div class="joker-item"><div class="joker-item-title red">📸 DROHNEN-SCAN</div><div class="joker-item-desc">Gejagte schicken sofort ein Foto</div></div>
+        <div class="joker-item"><div class="joker-item-title red">📵 FUNKSTÖRUNG</div><div class="joker-item-desc">Gejagte können 5 Min. keine Codes eingeben</div></div>
+      </div>
+      <div>
+        <div class="joker-col-header blue">🏃 GEJAGTEN-JOKER</div>
+        <div class="joker-item"><div class="joker-item-title blue">👻 GHOST MODE</div><div class="joker-item-desc">Nächste Standortmeldung überspringen</div></div>
+        <div class="joker-item"><div class="joker-item-title blue">🌫️ NEBELWAND</div><div class="joker-item-desc">Fänger muss bei Sichtkontakt 2 Min. stehen</div></div>
+        <div class="joker-item"><div class="joker-item-title blue">🗺️ ABLENKUNG</div><div class="joker-item-desc">Einmal falschen Standort melden</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 12: STATIONEN -->
+  <div class="slide" id="slide-11">
+    <div class="slide-header">DIE 6 VERSTECKE</div>
+    <div class="slide-title">📍 WO DIE CODES SIND</div>
+    <div style="text-align:center;margin-bottom:12px;font-size:.72rem;color:var(--gray);letter-spacing:1px;">Hover zum Aufdecken — nur Spielleiter!</div>
+    <div class="loc-grid">
+      <div class="loc-card"><div class="loc-num">STATION 01</div><div class="loc-icon-name"><span class="loc-icon">🏛️</span><span class="loc-name">RATHAUS</span></div><div class="loc-desc">Rückseite der Packstation</div><div class="loc-code">4827</div></div>
+      <div class="loc-card"><div class="loc-num">STATION 02</div><div class="loc-icon-name"><span class="loc-icon">🏫</span><span class="loc-name">SCHULE</span></div><div class="loc-desc">Am Busfahrplan</div><div class="loc-code">3159</div></div>
+      <div class="loc-card"><div class="loc-num">STATION 03</div><div class="loc-icon-name"><span class="loc-icon">🛝</span><span class="loc-name">SPIELPLATZ 1</span></div><div class="loc-desc">Unter der Schaukel</div><div class="loc-code">7364</div></div>
+      <div class="loc-card"><div class="loc-num">STATION 04</div><div class="loc-icon-name"><span class="loc-icon">🚇</span><span class="loc-name">UNTERFÜHRUNG</span></div><div class="loc-desc">Unten am Geländer</div><div class="loc-code">2891</div></div>
+      <div class="loc-card"><div class="loc-num">STATION 05</div><div class="loc-icon-name"><span class="loc-icon">🌉</span><span class="loc-name">BRÜCKE</span></div><div class="loc-desc">Seitlich am Pfosten</div><div class="loc-code">5043</div></div>
+      <div class="loc-card"><div class="loc-num">STATION 06</div><div class="loc-icon-name"><span class="loc-icon">🧗</span><span class="loc-name">SPIELPLATZ 2</span></div><div class="loc-desc">Am Boden des Klettergerüsts</div><div class="loc-code">6712</div></div>
+    </div>
+  </div>
+
+  <!-- 13: AUSLOSEN -->
+  <div class="slide" id="slide-12">
+    <div class="slide-header">ROLLEN VERTEILEN</div>
+    <div class="slide-title">⚡ AUSLOSEN</div>
+    <div class="rand-wrap">
+      <div class="team-row">
+        <div class="team-card" id="tc-A"><span class="team-emoji">🔴</span><span class="team-name">TEAM A</span><span class="team-role-badge" id="tb-A">AUSSTEHEND</span></div>
+        <div class="team-card" id="tc-B"><span class="team-emoji">🔵</span><span class="team-name">TEAM B</span><span class="team-role-badge" id="tb-B">AUSSTEHEND</span></div>
+        <div class="team-card" id="tc-C"><span class="team-emoji">🟢</span><span class="team-name">TEAM C</span><span class="team-role-badge" id="tb-C">AUSSTEHEND</span></div>
+      </div>
+      <button class="rand-btn" onclick="doRandomize()">⚡ &nbsp; ROLLEN AUSLOSEN</button>
+
+      <div class="rot-action">
+        <div class="rot-action-label">🔄 // NACH EINEM FANG — WER HAT WEN GEFANGEN?</div>
+        <div class="rot-action-row">
+          <button class="rot-action-btn" onclick="rotate('A','B')">A fängt B</button>
+          <button class="rot-action-btn" onclick="rotate('A','C')">A fängt C</button>
+          <button class="rot-action-btn" onclick="rotate('B','A')">B fängt A</button>
+          <button class="rot-action-btn" onclick="rotate('B','C')">B fängt C</button>
+          <button class="rot-action-btn" onclick="rotate('C','A')">C fängt A</button>
+          <button class="rot-action-btn" onclick="rotate('C','B')">C fängt B</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 14: TIMER -->
+  <div class="slide" id="slide-13">
+    <div class="slide-header">STANDORT-TIMER</div>
+    <div class="slide-title">⏱️ 4 MINUTEN</div>
+    <div class="timer-wrap">
+      <div class="timer-round" id="timerRound">RUNDE 1 // BEREIT</div>
+      <div class="timer-huge" id="timerDisplay">4:00</div>
+      <div class="timer-prog"><div class="timer-prog-bar" id="timerBar" style="width:100%"></div></div>
+      <div class="timer-status" id="timerStatus">BEREIT — START DRÜCKEN WENN DAS SPIEL BEGINNT</div>
+      <div class="timer-controls">
+        <button class="t-btn big" onclick="timerToggle()" id="timerToggleBtn">▶ &nbsp; START</button>
+        <button class="t-btn" onclick="timerReset()">↺ RESET</button>
+        <button class="t-btn danger" onclick="timerStop()">■ STOP</button>
+      </div>
+      <div class="standort-alert" id="standortAlert">📡 &nbsp; STANDORT JETZT ABFRAGEN!</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="bottomnav intro-hidden" id="bottomnav">
+  <button class="nav-btn" id="btnPrev" onclick="prevSlide()" disabled>◀ ZURÜCK</button>
+  <div class="slide-counter"><span id="slideNumBot">01</span> / <span id="slideTotalBot">14</span></div>
+  <button class="nav-btn primary" id="btnNext" onclick="nextSlide()">WEITER ▶</button>
+</div>
+
+<script>
+const TOTAL = 14;
+let current = 0;
+let introDone = false;
+
+// MATRIX RAIN
+const canvas = document.getElementById('matrixCanvas');
+const ctx = canvas.getContext('2d');
+let mtxW, mtxH, mtxCols, mtxDrops;
+const mtxChars = 'MISTERXÖ01アイウエオカキクケコ0123456789#$@!=+';
+function mtxResize(){
+  mtxW = canvas.width = window.innerWidth;
+  mtxH = canvas.height = window.innerHeight;
+  mtxCols = Math.floor(mtxW / 18);
+  mtxDrops = new Array(mtxCols).fill(0).map(()=>Math.random()*-100);
+}
+mtxResize();
+window.addEventListener('resize', mtxResize);
+let mtxRunning = true;
+function mtxDraw(){
+  ctx.fillStyle = 'rgba(0,0,0,0.07)';
+  ctx.fillRect(0,0,mtxW,mtxH);
+  ctx.font = '16px "Share Tech Mono", monospace';
+  for(let i=0;i<mtxCols;i++){
+    const ch = mtxChars[Math.floor(Math.random()*mtxChars.length)];
+    const x = i*18;
+    const y = mtxDrops[i]*16;
+    if(y > 0){
+      ctx.fillStyle = Math.random()>0.97 ? '#a8ffb8' : '#00ff41';
+      ctx.fillText(ch, x, y);
+    }
+    if(y > mtxH && Math.random()>0.97) mtxDrops[i] = 0;
+    mtxDrops[i]++;
+  }
+  if(mtxRunning) requestAnimationFrame(mtxDraw);
+}
+mtxDraw();
+
+function startGame(){
+  document.body.classList.add('flash-go');
+  document.body.classList.add('matrix-fade');
+  document.getElementById('slide-0').classList.add('intro-exit');
+  setTimeout(()=>{
+    mtxRunning = false;
+    canvas.style.display = 'none';
+    document.getElementById('slide-0').classList.remove('active','intro-exit');
+    document.getElementById('slide-1').classList.add('active');
+    current = 1;
+    introDone = true;
+    document.getElementById('slidesWrap').classList.remove('intro-full');
+    document.getElementById('topbar').classList.remove('intro-hidden');
+    document.getElementById('statusbar').classList.remove('intro-hidden');
+    document.getElementById('bottomnav').classList.remove('intro-hidden');
+    updateNav();
+  }, 900);
+}
+
+function buildDots(){
+  const wrap = document.getElementById('slideDots');
+  wrap.innerHTML = '';
+  for(let i=0;i<TOTAL;i++){
+    const d = document.createElement('div');
+    d.className = 'dot' + (i===0?' active':'');
+    d.onclick = () => goTo(i);
+    wrap.appendChild(d);
+  }
+}
+buildDots();
+document.getElementById('slideTotal').textContent = String(TOTAL).padStart(2,'0');
+document.getElementById('slideTotalBot').textContent = String(TOTAL).padStart(2,'0');
+
+function updateNav(){
+  document.getElementById('btnPrev').disabled = current<=1;
+  document.getElementById('btnNext').textContent = current===TOTAL-1 ? '✓ FERTIG' : 'WEITER ▶';
+  const num = String(current+1).padStart(2,'0');
+  document.getElementById('slideNum').textContent = num;
+  document.getElementById('slideNumBot').textContent = num;
+  document.querySelectorAll('.dot').forEach((d,i)=>d.className='dot'+(i===current?' active':''));
+}
+
+function goTo(idx){
+  if(idx===0 && introDone) return;
+  const slides = document.querySelectorAll('.slide');
+  slides[current].classList.remove('active');
+  slides[current].classList.add('exit-left');
+  setTimeout(()=>slides[current].classList.remove('exit-left'),500);
+  current = idx;
+  slides[current].classList.add('active');
+  updateNav();
+}
+
+function nextSlide(){ if(current<TOTAL-1) goTo(current+1); }
+function prevSlide(){ const min = introDone ? 1 : 0; if(current>min) goTo(current-1); }
+
+document.addEventListener('keydown',e=>{
+  if(!introDone && e.key==='Enter') startGame();
+  if(e.key==='ArrowRight'||e.key===' ') nextSlide();
+  if(e.key==='ArrowLeft') prevSlide();
+});
+
+setInterval(()=>{
+  const n=new Date();
+  document.getElementById('clock').textContent =
+    String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')+':'+String(n.getSeconds()).padStart(2,'0');
+},1000);
+
+// RANDOMIZER
+const TEAMS = ['A','B','C'];
+let currentRoles = {A:null, B:null, C:null};
+
+function applyRoles(){
+  TEAMS.forEach(t=>{
+    const card = document.getElementById('tc-'+t);
+    const badge = document.getElementById('tb-'+t);
+    card.className = 'team-card';
+    if(currentRoles[t]==='faenger'){ card.classList.add('is-faenger'); badge.textContent='🎯 FÄNGER'; }
+    else if(currentRoles[t]==='gejagt'){ card.classList.add('is-gejagt'); badge.textContent='🏃 GEJAGT'; }
+    else{ badge.textContent='AUSSTEHEND'; }
+  });
+}
+
+function doRandomize(){
+  const fIdx = Math.floor(Math.random()*3);
+  TEAMS.forEach((t,i)=>{ currentRoles[t] = i===fIdx ? 'faenger' : 'gejagt'; });
+  applyRoles();
+}
+
+function rotate(catcher, caught){
+  if(catcher===caught) return;
+  const third = TEAMS.find(t => t!==catcher && t!==caught);
+  currentRoles[catcher] = 'gejagt';
+  currentRoles[caught] = 'gejagt';
+  currentRoles[third] = 'faenger';
+  applyRoles();
+}
+
+// TIMER
+let tSec=240, tMax=240, tRunning=false, tInterval=null, tRound=1;
+function timerToggle(){
+  if(tRunning){
+    clearInterval(tInterval); tRunning=false;
+    document.getElementById('timerToggleBtn').textContent='▶  WEITER';
+    document.getElementById('timerStatus').textContent='PAUSIERT';
+  } else {
+    tRunning=true;
+    document.getElementById('timerToggleBtn').textContent='⏸  PAUSE';
+    tInterval=setInterval(timerTick,1000);
+  }
+}
+function timerTick(){
+  tSec--;
+  if(tSec<=0){
+    tSec=0; renderTimer();
+    clearInterval(tInterval); tRunning=false;
+    document.getElementById('timerToggleBtn').textContent='▶  START';
+    document.getElementById('timerStatus').textContent='⚡ STANDORT JETZT ABFRAGEN!';
+    document.getElementById('standortAlert').classList.add('show');
+    document.getElementById('timerDisplay').className='timer-huge done';
+    setTimeout(()=>{
+      tSec=tMax; tRound++;
+      document.getElementById('timerRound').textContent='RUNDE '+tRound+' // BEREIT';
+      document.getElementById('timerDisplay').className='timer-huge';
+      document.getElementById('standortAlert').classList.remove('show');
+      document.getElementById('timerStatus').textContent='BEREIT — START FÜR RUNDE '+tRound;
+      renderTimer();
+    },4000);
+  } else { renderTimer(); }
+}
+function renderTimer(){
+  const m=Math.floor(tSec/60), s=tSec%60;
+  const d=document.getElementById('timerDisplay');
+  d.textContent=m+':'+String(s).padStart(2,'0');
+  document.getElementById('timerBar').style.width=(tSec/tMax*100)+'%';
+  d.classList.remove('warn','done');
+  if(tSec>0&&tSec<=30) d.classList.add('warn');
+  if(tSec===0) d.classList.add('done');
+  document.getElementById('timerStatus').textContent=
+    tRunning ? `RUNDE ${tRound} LÄUFT // NÄCHSTE MELDUNG IN ${m}:${String(s).padStart(2,'0')} MIN` : 'PAUSIERT';
+}
+function timerReset(){
+  clearInterval(tInterval); tRunning=false; tSec=tMax; tRound=1;
+  document.getElementById('timerToggleBtn').textContent='▶  START';
+  document.getElementById('timerRound').textContent='RUNDE 1 // BEREIT';
+  document.getElementById('timerDisplay').className='timer-huge';
+  document.getElementById('timerStatus').textContent='BEREIT — START DRÜCKEN WENN DAS SPIEL BEGINNT';
+  document.getElementById('standortAlert').classList.remove('show');
+  renderTimer();
+}
+function timerStop(){
+  if(!confirm('Spiel wirklich beenden?')) return;
+  timerReset();
+  TEAMS.forEach(t => currentRoles[t]=null);
+  applyRoles();
+}
+</script>
+</body>
+</html>
 
